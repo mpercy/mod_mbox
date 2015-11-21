@@ -9,5 +9,24 @@ mod_mbox is a mailing list archive browser. Functionality includes:
 
 Minimum requirement for build is httpd 2.3.15 and apr-util compiled with iconv.
 
+Build requirements (such as apxs) may be provided by Linux distributions as
+'apache2-dev' or 'apache2-devel'.
+
+To build:
+
+  $ scons APXS=$(which apxs)
+
+You may also give an install prefix like so:
+
+  $ scons APXS=$(which apxs) prefix=path/to/prefix
+
+To install:
+
+Add the following to your httpd config file:
+
+  LoadModule mbox_module /path/to/mod_mbox.so
+
+See http://httpd.apache.org/mod_mbox/install.html for more details.
+
 For more information about mod_mbox and documentation, please visit the
 mod_mbox website at <http://httpd.apache.org/mod_mbox/>.
