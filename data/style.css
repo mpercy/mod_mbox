@@ -1,37 +1,45 @@
-html { margin: 0; padding: 0; }
-
-body
-{
-  font-size: small;
-  background: #fff url("/archives/asf_logo_simple.png") no-repeat 98% 1em;
-  padding: 0 2%;
-  margin: 0;
+body {
+  font: 13px/1 serif;
+  padding: 0 20px;
 }
 
+#cont {
+  background: #fff url("/archives/asf_logo_simple.png") no-repeat right 1em;
+}
+
+/* Beyond a certain point, the window gets too wide. */
+@media (min-width: 1740px) {
+  #cont {
+    width: 1700px;
+    margin:0 auto;
+  }
+}
+
+a, a:visited { color:#2200CC; text-decoration:none; }
 a:hover { text-decoration: underline; }
 
-h1
-{
-  font-size: x-large;
-  padding: 0;
-  margin: 1em 0 0.4em 0;
+h1 { font: bold 24px serif; padding: 1em 0 0.4em 0; margin:0; }
+
+h5 { font: bold 11px verdana; margin: 0 0 4px 0; }
+h5 .num-pages { font-weight:normal; }
+h5 .pagination { font-weight: bold; }
+h5 .pagination #prev-page { color:#666; font-weight:normal; }
+h5 .pagination #next-page { color:#666; font-weight:normal; }
+h5 .pagination a { font-weight:normal; text-decoration:underline; }
+
+table {
+  width: 100%;
+  border-spacing: 0;
+  border-collapse: collapse;
+  border: 1px #777 solid;
 }
 
-h5 {
-  font-size: 100%;
-  font-weight: normal;
-  padding: 0;
-  margin: 0 0 4px 0;
-}
+thead, tfoot { background: #900; border:1px solid #900; }
+td, th { padding: 2px 7px; }
+th { color: white; font: bold 11px verdana; text-align: left; }
+th a, th a:visited { color: white; text-decoration: underline; }
 
-/*
-h5 .num-pages { float:right; }
-h5 .page-selector { display:block; }
-*/
-h5 .shim { margin:0; }
-
-p#lastupdated
-{
+p#lastupdated {
   border-top: 1px #ccc solid;
   padding: 0.2em;
   color: #333333;
@@ -40,49 +48,8 @@ p#lastupdated
   font-style: italic;
 }
 
-div#loading
-{
-  border: 2px #900 solid;
-  background: #ccc;
-  text-align: center;
-  font-style: italic;
-
-  position: absolute;
-  top: 65%;
-  left: 30%;
-  right: 30%;
-
-  padding: 2em;
-}
-
-table
-{
-  margin: 0;
-  border-spacing: 0;
-  border-collapse: collapse;
-  border: 1px #900 solid;
-  border-top: none;
-}
-
-table thead th, table tfoot th
-{
-  font-size: 110%;
-  font-weight: bold;
-  text-align: left;
-  margin: 0;
-  padding: 0.3em;
-  background: #900;
-  color: white;
-}
-
-table thead th a, table tfoot th a { color: white; }
-table td { padding: 0.2em 0.5em; }
-table th a { text-decoration: underline; }
-
 /* List info */
-table#listinfo
-{
-  width: 100%;
+table#listinfo {
   margin: 1em 0;
 }
 
@@ -92,9 +59,7 @@ table#listinfo td.left  { background: #ddd; font-weight: bold;
 table#listinfo td.right { background: #eee; text-align: left; }
 
 /* Layout grid for year tables. */
-table#grid
-{
-  width: 100%;
+table#grid {
   border: none;
   margin: 1em 0;
 }
@@ -107,7 +72,6 @@ table#grid td.right { width: 49%; }
 table#grid td.left .year-cont { padding-right: 1em; }
 
 /* Year tables, which display mboxes per year. */
-table.year { width: 100%; }
 table.year tr td.date {
   font-weight: bold;
   text-align: center;
@@ -123,98 +87,101 @@ table.year tr:hover td.date     { background: #eee; }
 table.year tr:hover td.links    { background: white; }
 table.year tr:hover td.msgcount { background: #eee; }
 
-/* Container div to reset the relative width for its children since we have
-   applied body padding. */
-#cont {
-  width: 100%;
-}
-
 /* Shim for float clearing purposes. */
-#shim {
-  clear: both;
-  margin-bottom: 2em;
-}
+#shim { clear: both; }
 
 /* mbox list. */
-#boxlist-cont {
-  float: left;
-  width: 120px;
-}
-
-table#boxlist { width: 100%; }
-table#boxlist tr       { background: #eee;  }
+#boxlist-outer { float: left; width: 155px; }
+table#boxlist { width:140px; }
+table#boxlist tr       { background: #eee; }
+table#boxlist thead tr { background: inherit; }
 table#boxlist tr:hover { background: white; }
+table#boxlist thead tr:hover { background: inherit; }
+table#boxlist tr.active { background: #fff; border-top: 1px solid #777; border-bottom: 1px solid #777; }
 
-table#boxlist tr#boxactive
-{
-  background: white;
-  border-top: 1px #888 solid;
-  border-bottom: 1px #888 solid;
-}
-
-table#boxlist td.msgcount { text-align: right; }
-table#boxlist td.box      { white-space: nowrap; }
-table#boxlist td.box a    { display: block;    }
+table#boxlist .box      { white-space: nowrap; }
+table#boxlist .msgcount { text-align: center; }
 
 /* Message list. */
-#msglist-cont
-{
-  margin-left: 140px;
-}
-
-table#msglist { width: 100%; }
+#msglist-outer { margin-left: 160px; }
+table#msglist { border-top:none; border-bottom:none; margin-bottom:1em; }
 table#msglist thead th.title { text-align: left; white-space: nowrap; }
 table#msglist thead th.pages { text-align: right; }
-table#msglist thead th.sort  { text-align: right; padding-right: 0.3em;
-                               white-space: nowrap; }
+table#msglist thead th.sort  { text-align: right; padding-right: 0.3em; white-space: nowrap; }
 
-table#msglist tr td.author  { background: #ddd; width: 20%; }
-table#msglist tr td.subject { background: #eee; width: 60%;
-                              white-space: pre-wrap; font-family: monospace; overflow: hidden; }
-table#msglist tr td.date    { background: #ddd; width: auto;
-                              text-align: right; font-style: italic;
-                              white-space: nowrap; }
+#msglist .author, #msglist-ajax-header .author { width: 180px; }
+#msglist .date, #msglist-ajax-header .date { width:1em; }
+#msglist-ajax-header { border:none; }
+#msglist-ajax-header th { padding-bottom:1px; }
 
-table#msglist tr.msgactive  { border-top: 1px #888 solid; }
+table#msglist tr:first-child td { border-top:1px solid #900; }
+table#msglist td.author { background: #ddd; }
+table#msglist td.subject { background: #eee; white-space: pre-wrap;
+                           font: 14px Ubuntu Mono, Courier New, monospace;
+                           overflow: hidden;
+                           border-top:1px solid #eee;
+                         }
+table#msglist td.subject a { text-decoration:underline; }
+table#msglist td.subject a:focus { outline: 0; }
+table#msglist th.date { padding:0 15px 0 11px; }
+table#msglist td.date { text-align: right; background: #ddd; font-style: italic; white-space: nowrap;
+                        padding-left:8px; }
 
-table#msglist tr.msgactive td.author,
-table#msglist tr.msgactive td.subject,
-table#msglist tr.msgactive td.date { background: white; }
-
+table#msglist tr:hover td { cursor:pointer; }
 table#msglist tr:hover td.author  { background: #eee;  }
 table#msglist tr:hover td.subject { background: white; }
 table#msglist tr:hover td.date    { background: #eee;  }
 
-/** Message view */
-table#msgview.static
-{
-  width: 100%;
-}
+table#msglist tr.active td { border-top:1px solid #777; border-bottom:1px solid #777; background: #bfd5f6; }
+table#msglist tr.active:hover td { background:#bfd5f6; }
 
-table#msgview.js
-{
-  position: absolute;
-  top: 0;
-  right: 0;
-  left: 16%;
-  margin: 5em 0 2em 0;
-  width: 82%;
-  display: none;
-}
-
+/* Message view */
+table#msgview { border-bottom: none; }
 table#msgview thead th.title,
 table#msgview tfoot th.title { text-align: left; white-space: nowrap; }
 table#msgview thead th.nav,
 table#msgview tfoot th.nav   { text-align: right; padding-right: 0.3em; }
 
-table#msgview tr td.left   { background: #ddd; width: 10%;
-                             text-align: right; padding-right: 1em; font-weight: bold; }
-table#msgview tr td.right  { background: #eee; width: auto; font-family: monospace; }
+table#msgview tr td.left{ background: #ddd; width: 180px; text-align: right; font:bold 11px verdana; }
+table#msgview tr td.left strong { display:block; padding-right:3px; }
+table#msgview tr td.right  { background: #eee; width: auto; font-family: Ubuntu Mono, Courier New, monospace; }
 
 table#msgview tr.raw td.right { font-family: sans-serif; }
 
-table#msgview tr.contents  { border-top: 1px #888 solid; background: white; }
+table#msgview tr.contents  { border-top: 1px #777 solid; background: white; }
 table#msgview tr.contents pre { white-space: pre-wrap; }
 
 table#msgview tr.mime { vertical-align: top; }
 table#msgview tr.mime ul { padding-left: 1.5em; margin: 0; }
+
+html #dragbar { display:none; }
+
+/* We set the "ajax" class on the html element when the JS-enabled message view
+   is shown. */
+html.ajax { height:100%; overflow-y:hidden; }
+html.ajax body { height:100%; overflow-y:hidden; }
+
+html.ajax #boxlist-outer { overflow-y: hidden; }
+html.ajax #boxlist-inner { overflow-y: auto; }
+
+html.ajax #msglist-outer { overflow-y: hidden; }
+html.ajax #msglist-inner { overflow-y: auto; }
+html.ajax #msglist-inner thead { display:none; }
+html.ajax #msglist-inner tfoot { display:none; }
+html.ajax #msglist { border-color:#777; margin:0; }
+
+html.ajax #msgview-inner { display:block; overflow-y: auto; }
+html.ajax #msgview-inner thead { display:none; }
+html.ajax #msgview-inner tfoot { display:none; }
+html.ajax #msgview { margin-bottom:1em; border:1px solid #777; border-top:none; }
+html.ajax #msgview #close-link { float:right; font: bold 11px verdana; }
+html.ajax #msgview #msg-permalink { font:11px verdana; }
+html.ajax #msgview #msg-permalink a { font-weight: bold; }
+
+html.ajax #dragbar { display:block; cursor:row-resize; }
+html.ajax #dragbar .mid {
+  height:5px;
+  background:#fff;
+  border-top:1px solid #777;
+  border-bottom:1px solid #777;
+}

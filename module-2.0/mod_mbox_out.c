@@ -255,8 +255,7 @@ apr_status_t mbox_static_boxlist(request_rec *r)
         return HTTP_FORBIDDEN;
     }
 
-    ap_rputs("  <div id=\"boxlist-cont\">\n", r);
-
+    ap_rputs("  <div id=\"boxlist-outer\">\n", r);
 
     ap_rputs("  <h5>\n", r);
     if (conf->root_path) {
@@ -267,9 +266,10 @@ apr_status_t mbox_static_boxlist(request_rec *r)
                "List index</a>", get_base_path(r));
     ap_rputs("</h5>\n\n", r);
 
+    ap_rputs("  <div id=\"boxlist-inner\">\n", r);
 
     ap_rputs("  <table id=\"boxlist\">\n", r);
-    ap_rputs("   <thead><tr><th colspan=\"2\">Month</th></tr></thead>\n",
+    ap_rputs("   <thead><tr><th class=\"box\">Month</th><th class=\"msgcount\">Count</th></tr></thead>\n",
              r);
     ap_rputs("   <tbody>\n", r);
 
@@ -278,7 +278,7 @@ apr_status_t mbox_static_boxlist(request_rec *r)
     for (i = 0; i < files->nelts; i++) {
         if (fi[i].count || !conf->hide_empty) {
             if (strcmp(k + 1, fi[i].filename) == 0) {
-                ap_rputs("   <tr id=\"boxactive\">", r);
+                ap_rputs("   <tr class=\"active\">", r);
             }
             else {
                 ap_rputs("   <tr>", r);
@@ -303,7 +303,8 @@ apr_status_t mbox_static_boxlist(request_rec *r)
 
     ap_rputs("   </tbody>\n", r);
     ap_rputs("  </table>\n", r);
-    ap_rputs("  </div><!-- /#boxlist-cont -->\n", r);
+    ap_rputs("  </div><!-- /#boxlist-inner -->\n", r);
+    ap_rputs("  </div><!-- /#boxlist-outer -->\n", r);
 
     return APR_SUCCESS;
 }
@@ -467,8 +468,8 @@ static void display_static_msglist_entry(request_rec *r, Message *m,
     }
 
     if (linked) {
-        ap_rprintf(r, "<a href=\"%s\">",
-                   MSG_ID_ESCAPE_OR_BLANK(r->pool, m->msgID));
+        const char *msgid = MSG_ID_ESCAPE_OR_BLANK(r->pool, m->msgID);
+        ap_rprintf(r, "<a id=\"%s\" href=\"%s\">", msgid, msgid);
     }
 
     ap_rprintf(r, "%s", ESCAPE_AND_CONV_HDR(r->pool, m->subject));
@@ -686,9 +687,10 @@ static void mbox_static_msglist_page_selector(request_rec *r, const char *baseUR
                       current_page + 1, pages);
     } else {
         // TODO: Get rid of the calls to apr_psprintf().
-        ap_rputs("<span class=\"page-selector\">", r);
-        send_link_if_not_active(r, current_page == 0, "&laquo; Previous",
-                                "", "", baseURI, r->path_info, "?",
+        ap_rputs("<span class=\"pagination\">", r);
+        send_link_if_not_active(r, current_page == 0, "&laquo; Previous Page",
+                                "<span id=\"prev-page\">", "</span>",
+                                baseURI, r->path_info, "?",
                                 apr_psprintf(r->pool, "%d", current_page - 1));
 
         for (int i = 0; i < pages; i++) {
@@ -699,8 +701,9 @@ static void mbox_static_msglist_page_selector(request_rec *r, const char *baseUR
                                     apr_psprintf(r->pool, "%d", i));
         }
         ap_rputs(" &middot; ", r);
-        send_link_if_not_active(r, current_page + 1 >= pages, "Next &raquo;",
-                                "", "", baseURI, r->path_info, "?",
+        send_link_if_not_active(r, current_page + 1 >= pages, "Next Page &raquo;",
+                                "<span id=\"next-page\">", "</span>",
+                                baseURI, r->path_info, "?",
                                 apr_psprintf(r->pool, "%d", current_page + 1));
         ap_rputs("</span>\n", r);
     }
@@ -712,11 +715,14 @@ static void mbox_static_msglist_nav(request_rec *r, const char *baseURI,
 {
     ap_rputs("   <tr>", r);
     send_link_if_not_active(r, sortFlags == MBOX_SORT_AUTHOR, "Author",
-                            "<th>", "</th>", baseURI, "/", "author", "");
-    send_link_if_not_active(r, sortFlags == MBOX_SORT_THREAD, "Thread",
-                            "<th>", "</th>", baseURI, "/", "thread", "");
+                            "<th class=\"author\">", "</th>", baseURI, "/",
+                            "author", "");
+    send_link_if_not_active(r, sortFlags == MBOX_SORT_THREAD, "Subject",
+                            "<th class=\"subject\">", "</th>", baseURI, "/",
+                            "thread", "");
     send_link_if_not_active(r, sortFlags == MBOX_SORT_DATE, "Date",
-                            "<th>", "</th>", baseURI, "/", "date", "");
+                            "<th class=\"date\">", "</th>", baseURI, "/",
+                            "date", "");
     ap_rputs("</tr>\n\n", r);
 }
 
@@ -740,9 +746,9 @@ static apr_status_t send_page_header(request_rec *r, const char *title,
 
     DECLINE_NOT_SUCCESS(mbox_send_header_includes(r, conf));
 
-    ap_rputs(" </head>\n\n"
-             " <body id=\"archives\"", r);
-    ap_rputs(">\n", r);
+    ap_rputs(" </head>\n"
+             " <body id=\"archives\">\n", r);
+    ap_rputs(" <div id=\"cont\">\n", r);
 
     ap_rprintf(r, "  <h1>%s</h1>\n\n", h1);
     return APR_SUCCESS;
@@ -829,15 +835,14 @@ apr_status_t mbox_static_msglist(request_rec *r, apr_file_t *f,
                              get_base_name(r), month, year),
                 NULL));
 
-    ap_rputs("  <div id=\"cont\">\n", r);
-
     /* Display box list */
     mbox_static_boxlist(r);
 
-    ap_rputs("  <div id=\"msglist-cont\">\n", r);
+    ap_rputs("  <div id=\"msglist-outer\">\n", r);
     ap_rputs("<h5>", r);
     mbox_static_msglist_page_selector(r, baseURI, pages, current_page);
     ap_rputs("</h5>", r);
+    ap_rputs("  <div id=\"msglist-inner\">\n", r);
     ap_rputs("  <table id=\"msglist\">\n", r);
     ap_rputs("  <thead>\n", r);
     mbox_static_msglist_nav(r, baseURI, pages, current_page, sortFlags);
@@ -889,13 +894,14 @@ apr_status_t mbox_static_msglist(request_rec *r, apr_file_t *f,
     mbox_static_msglist_nav(r, baseURI, pages, current_page, sortFlags);
     ap_rputs("  </tfoot>\n", r);
     ap_rputs("  </table>\n", r);
-    ap_rputs("  </div><!-- /#msglist-cont -->\n", r);
+    ap_rputs("  </div><!-- /#msglist-inner -->\n", r);
+    ap_rputs("  </div><!-- /#msglist-outer -->\n", r);
 
     ap_rputs(" <div id=\"shim\"></div>\n", r);
-    ap_rputs(" </div><!-- /#cont -->\n", r);
 
     DECLINE_NOT_SUCCESS(mbox_send_footer_includes(r, conf));
 
+    ap_rputs(" </div><!-- /#cont -->\n", r);
     ap_rputs(" </body>\n", r);
     ap_rputs("</html>", r);
     return OK;
@@ -930,6 +936,7 @@ apr_status_t mbox_ajax_browser(request_rec *r)
                  r);
     }
 
+    ap_rputs(" </div><!-- /#cont -->\n", r);
     ap_rputs(" </body>\n</html>\n", r);
 
     return OK;
@@ -1116,10 +1123,23 @@ int mbox_static_message(request_rec *r, apr_file_t *f)
     conf = ap_get_module_config(r->per_dir_config, &mbox_module);
     baseURI = get_base_uri(r);
 
-    msgID = r->path_info + 1;
+    apr_table_t *GET;
+    ap_args_to_table(r, &GET);
+
+    /* By default, we display the page "chrome".
+     * If the user sends skip_chrome=1, we do not display the chrome,
+     * which means we only return the HTML for the <table> but not the page
+     * title or anything else like that. This is fetched via Javascript to
+     * be displayed dynamically. */
+    int display_chrome = 1;
+    const char *skip_chrome_str = apr_table_get(GET, "skip_chrome");
+    if (skip_chrome_str && strcmp(skip_chrome_str, "1") == 0) {
+        display_chrome = 0;
+    }
 
     /* msgID should be the part of the URI that Apache could not resolve
      * on its own.  Grab it and skip over the expected /. */
+    msgID = r->path_info + 1;
     m = fetch_message(r, f, msgID);
     if (!m) {
         return HTTP_NOT_FOUND;
@@ -1137,19 +1157,23 @@ int mbox_static_message(request_rec *r, apr_file_t *f)
                                              m->cte, m->boundary);
 
     subject = ESCAPE_AND_CONV_HDR(r->pool, m->subject);
-    send_page_header(r, subject,
-                     apr_psprintf(r->pool, "%s mailing list archives",
-                                  get_base_name(r)));
 
-    ap_rputs("  <h5>\n", r);
 
-    if (conf->root_path) {
-        ap_rprintf(r, "<a href=\"%s\" title=\"Back to the archives depot\">"
-                   "Site index</a> &middot; ", conf->root_path);
+    if (display_chrome) {
+        send_page_header(r, subject,
+                         apr_psprintf(r->pool, "%s mailing list archives",
+                                      get_base_name(r)));
+
+        ap_rputs("  <h5>\n", r);
+
+        if (conf->root_path) {
+            ap_rprintf(r, "<a href=\"%s\" title=\"Back to the archives depot\">"
+                    "Site index</a> &middot; ", conf->root_path);
+        }
+
+        ap_rprintf(r, "<a href=\"%s\" title=\"Back to the list index\">"
+                "List index</a></h5>", get_base_path(r));
     }
-
-    ap_rprintf(r, "<a href=\"%s\" title=\"Back to the list index\">"
-               "List index</a></h5>", get_base_path(r));
 
     /* Display context message list */
     from = mbox_cte_decode_header(r->pool, m->from);
@@ -1158,37 +1182,38 @@ int mbox_static_message(request_rec *r, apr_file_t *f)
     }
     from = ESCAPE_OR_BLANK(r->pool, from);
 
-    ap_rputs("  <table class=\"static\" id=\"msgview\">\n", r);
+    ap_rputs("  <div id=\"msgview-inner\">\n", r);
+    ap_rputs("  <table id=\"msgview\">\n", r);
 
     context = fetch_context_msgids(r, f, m->msgID);
 
     /* Top navigation */
     ap_rputs("   <thead>\n"
-             "    <tr>\n" "    <th class=\"title\">Message view</th>\n", r);
+                "    <tr>\n" "    <th class=\"title\">Message view</th>\n", r);
     mbox_static_message_nav(r, context, baseURI, m->msgID);
     ap_rputs("   </tr>\n" "   </thead>\n\n", r);
 
     /* Bottom navigation */
     ap_rputs("   <tfoot>\n"
-             "    <tr>\n"
-             "    <th class=\"title\"><a href=\"#archives\">Top</a></th>\n",
-             r);
+                "    <tr>\n"
+                "    <th class=\"title\"><a href=\"#archives\">Top</a></th>\n",
+                r);
     mbox_static_message_nav(r, context, baseURI, m->msgID);
     ap_rputs("   </tr>\n" "   </tfoot>\n\n", r);
 
     /* Headers */
     ap_rputs("   <tbody>\n", r);
     ap_rprintf(r, "   <tr class=\"from\">\n"
-               "    <td class=\"left\">From</td>\n"
+               "    <td class=\"left\"><strong>From</strong></td>\n"
                "    <td class=\"right\">%s</td>\n" "   </tr>\n", from);
 
     ap_rprintf(r, "   <tr class=\"subject\">\n"
-               "    <td class=\"left\">Subject</td>\n"
+               "    <td class=\"left\"><strong>Subject</strong></td>\n"
                "    <td class=\"right\">%s</td>\n"
                "   </tr>\n", subject);
 
     ap_rprintf(r, "   <tr class=\"date\">\n"
-               "    <td class=\"left\">Date</td>\n"
+               "    <td class=\"left\"><strong>Date</strong></td>\n"
                "    <td class=\"right\">%s</td>\n"
                "   </tr>\n", ESCAPE_OR_BLANK(r->pool, m->rfc822_date));
 
@@ -1215,9 +1240,13 @@ int mbox_static_message(request_rec *r, apr_file_t *f)
 
     ap_rputs("   </tbody>\n", r);
     ap_rputs("  </table>\n", r);
+    ap_rputs("  </div><!-- /#msgview-inner -->\n", r);
 
-    ap_rputs(" </body>\n", r);
-    ap_rputs("</html>\n", r);
+    if (display_chrome) {
+        ap_rputs(" </div><!-- /#cont -->\n", r);
+        ap_rputs(" </body>\n", r);
+        ap_rputs("</html>\n", r);
+    }
 
     return OK;
 }
