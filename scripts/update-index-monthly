@@ -1,0 +1,83 @@
+#!/usr/bin/env zsh
+# ZSH 4+ script to ensure that we are up-to-date last month
+DATE=`date -u "+%Y%m"`
+typeset -i DATE
+# add year support sometime...
+CURDATE=$DATE
+DATE=$DATE-1
+ARCHIVES_PATH=$HOME/archives/mbox-archives.conf
+
+if [ $# -ge 1 ]; then
+  ARCHIVES_PATH="$1"
+  exit 1
+fi
+
+if [ ! -f $ARCHIVES_PATH ] ; then
+  echo $ARCHIVES_PATH not found.  Exiting.
+fi
+
+source $ARCHIVES_PATH
+
+for i in ${ARCHIVES} ; do
+    dirname=${${(P)i}[1]}
+    mboxtype=${${(P)i}[2]}
+    mboxpath=${${(P)i}[3]}
+
+    [ -t 0 ] && echo Updating $dirname from $mboxpath via $mboxtype for last month
+
+    mboxfile=$MBOX_DIR/$dirname/$DATE.mbox
+    mboxfile2=$MBOX_DIR/$dirname/$DATE
+
+    case "$mboxtype" in
+    rsync)
+        # rsync should have already gotten this for us.
+        if [ -f $mboxfile2.gz ] ; then
+            zcat $mboxfile2.gz > $mboxfile
+        fi
+        ;;
+    wget)
+        wget -q $mboxpath.gz -O $mboxfile2.gz
+        if [ -f $mboxfile2.gz ] ; then
+            gzcat $mboxfile2.gz > $mboxfile
+            rm $mboxfile2.gz
+        fi 
+        ;;
+    local)
+        mv $mboxpath $mboxfile
+        if [ -f $mboxfile ]; then
+            chmod 644 $mboxfile
+            rm $mboxfile*.dir
+            rm $mboxfile*.pag
+            rm $MBOX_DIR/$dirname/$CURDATE.mbox*.dir
+            rm $MBOX_DIR/$dirname/$CURDATE.mbox*.pag
+        fi
+        ;;
+    *)
+        echo "Say what? $mboxtype"
+        exit 1
+        ;;
+    esac
+    # We got the file successfully
+
+    # We may have gotten it without .mbox suffix
+    if [ -f $mboxfile2 -a ! -h $mboxfile ]; then
+        # Have we already done the symlink? 
+        echo "Creating link."
+        # Get rid of the old one that isn't a symlink.
+        if [ -f $mboxfile ]; then
+            rm $mboxfile
+        fi
+        ln -sf $mboxfile2 $mboxfile
+    fi
+    if [ -f $mboxfile ]; then
+        if [ ! -x $APACHE_DIR/bin/mod-mbox-util ]; then
+          echo "Generating index."
+          $APACHE_DIR/bin/generate_index $mboxfile
+          $APACHE_DIR/bin/load_msgid $mboxfile > $mboxfile.msgid
+        fi
+    fi
+done
+
+if [ ! -x $APACHE_DIR/bin/mod-mbox-util ]; then
+  $SCRIPT_DIR/create-index-all $ARCHIVES_INDEX
+fi

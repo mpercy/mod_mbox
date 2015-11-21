@@ -1,0 +1,38 @@
+#!/usr/bin/env zsh
+# ZSH 4+ script to create indexes for archives
+ARCHIVES_PATH=~jerenkrantz/archives/mbox-archives.conf
+
+if [ $# -ge 2 ]; then
+  ARCHIVES_PATH="$2"
+fi
+
+source $ARCHIVES_PATH
+
+# Strip possible prefixes and suffixes
+msgid=${1#'msgid='}
+msgid=${msgid#'%3c'}
+msgid=${msgid%'%3e'}
+msgid=${msgid/\%40/\@}
+
+PRETAG="<a href=\"$SERVER_LOC"
+POSTTAG='">'
+
+echo "<p>Looking for $msgid</p>"
+
+for i in ${ARCHIVES} ; do
+    dirname=${${(P)i}[1]}
+    for msg in $MBOX_DIR/$dirname/*.msgid; do
+        foo=`grep $msgid $msg`
+        if [ $? = 0 ]; then
+            msg=`basename $msg .msgid`
+            fooa=${(f)foo}
+            echo "<p>$dirname - $msg</p>"
+            echo "<ul>"
+            for j in ${=fooa}; do
+                j=`echo $j | sed 's/</\&lt;/g' | sed 's/>/\&gt;/g'`
+                echo "<li>$PRETAG$dirname/$msg/$j""$POSTTAG""$j""</a></li>";
+            done
+            echo "</ul>"
+        fi
+    done
+done

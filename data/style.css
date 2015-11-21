@@ -1,0 +1,218 @@
+html { margin: 0; padding: 0; }
+
+body
+{
+  margin: 0;
+  padding: 0;
+  font-size: small;
+  background-color: white;
+  background-image: url("/archives/asf_logo_simple.png");
+  background-repeat: no-repeat;
+  background-position: 98% 1em;
+}
+
+a:hover { text-decoration: underline; }
+
+h1
+{
+  font-size: x-large;
+  margin: 1em 2% 0.4em 2%;
+  padding: 0;
+}
+
+h5
+{
+  margin: 0 2%;
+  padding: 0;
+  font-size: 90%;
+  font-style: italic;
+}
+
+p#lastupdated
+{
+  border-top: 1px #ccc solid;
+  padding: 0.2em;
+  color: #333333;
+  text-align: right;
+  margin: 1em;
+  font-style: italic;
+}
+
+div#loading
+{
+  border: 2px #900 solid;
+  background: #ccc;
+  text-align: center;
+  font-style: italic;
+
+  position: absolute;
+  top: 65%;
+  left: 30%;
+  right: 30%;
+
+  padding: 2em;
+}
+
+table
+{
+  margin: 0;
+  border-spacing: 0;
+  border-collapse: collapse;
+
+  border: 1px #900 solid;
+  border-top: none;
+}
+
+table thead th, table tfoot th
+{
+  font-size: 110%;
+  font-weight: bold;
+  text-align: left;
+  margin: 0;
+  padding: 0.3em;
+  background: #900;
+  color: white;
+}
+
+table thead th a, table tfoot th a { color: white; }
+table td { padding: 0.2em 0.5em; }
+table th a { text-decoration: underline; }
+
+table#grid
+{
+  margin: 1em 2%;
+  width: 96%;
+  border: none;
+}
+
+table#grid td       { vertical-align: top; }
+table#grid td.left  { width: 50%; }
+table#grid td.right { width: 50%; }
+
+/** List info
+   */
+table#listinfo
+{
+  margin: 1em 2%;
+  width: 96%;
+}
+
+table#listinfo td.left  { background: #ddd; font-weight: bold;
+                          text-align: right; padding-right: 1em;
+                          width: 20%; }
+table#listinfo td.right { background: #eee; text-align: left; }
+
+/** Year
+   */
+table.year { width: 100%; }
+
+table.year tr td.date     { background: #ddd; width: 20%;
+                            text-align: center; padding-right: 1em;
+                            font-weight: bold; white-space: nowrap; }
+table.year tr td.links    { background: #eee; width: 70%; }
+table.year tr td.msgcount { background: #ddd; width: 10%; text-align: center; }
+
+table.year tr:hover td.date     { background: #eee; }
+table.year tr:hover td.links    { background: white; }
+table.year tr:hover td.msgcount { background: #eee; }
+
+
+/** Box list
+   */
+table#boxlist
+{
+  position: absolute;
+  top: 6em;
+  left: 2%;
+  right: 88%;
+  width: 10%;
+  margin-bottom: 2em;
+}
+
+table#boxlist tr       { background: #eee;  }
+table#boxlist tr:hover { background: white; }
+
+table#boxlist tr#boxactive
+{
+  background: white;
+  border-top: 1px #888 solid;
+  border-bottom: 1px #888 solid;
+}
+
+table#boxlist td.msgcount { text-align: right; }
+table#boxlist td.box      { white-space: nowrap; }
+table#boxlist td.box a    { display: block;    }
+
+/** Message list
+   */
+table#msglist
+{
+  position: absolute;
+  top: 6em;
+  right: 2%;
+  left: 16%;
+  margin: 0 0 2em 0;
+  width: 82%;
+}
+
+table#msglist thead th.title { text-align: left; white-space: nowrap; }
+table#msglist thead th.pages { text-align: right; }
+table#msglist thead th.sort  { text-align: right; padding-right: 0.3em;
+                               white-space: nowrap; }
+
+table#msglist tr td.author  { background: #ddd; width: 20%; }
+table#msglist tr td.subject { background: #eee; width: 60%;
+                              white-space: pre-wrap; font-family: monospace; overflow: hidden; }
+table#msglist tr td.date    { background: #ddd; width: auto;
+                              text-align: right; font-style: italic;
+                              white-space: nowrap; }
+
+table#msglist tr.msgactive  { border-top: 1px #888 solid; }
+
+table#msglist tr.msgactive td.author,
+table#msglist tr.msgactive td.subject,
+table#msglist tr.msgactive td.date { background: white; }
+
+table#msglist tr:hover td.author  { background: #eee;  }
+table#msglist tr:hover td.subject { background: white; }
+table#msglist tr:hover td.date    { background: #eee;  }
+
+/** Message view
+   */
+table.static#msgview
+{
+  position: absolute;
+  top: 6em;
+  right: 2%;
+  left: 2%;
+  margin: 0 0 2em 0;
+  width: 96%;
+}
+
+table.js#msgview
+{
+  position: absolute;
+  top: 0;
+  right: 2%;
+  left: 16%;
+  margin: 5em 0 2em 0;
+  width: 82%;
+  display: none;
+}
+
+table#msgview thead th.title,
+table#msgview tfoot th.title { text-align: left; white-space: nowrap; }
+table#msgview thead th.nav,
+table#msgview tfoot th.nav   { text-align: right; padding-right: 0.3em; }
+
+table#msgview tr td.left   { background: #ddd; width: 10%;
+                             text-align: right; padding-right: 1em; font-weight: bold; }
+table#msgview tr td.right  { background: #eee; width: auto; font-family: monospace; }
+
+table#msgview tr.raw td.right { font-family: sans-serif; }
+
+table#msgview tr.contents  { border-top: 1px #888 solid; background: white; }
+table#msgview tr.contents pre { white-space: pre-wrap; }
+
+table#msgview tr.mime { vertical-align: top; }
+table#msgview tr.mime ul { padding-left: 1.5em; margin: 0; }

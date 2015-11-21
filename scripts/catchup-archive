@@ -1,0 +1,105 @@
+#!/usr/bin/env zsh
+# ZSH 4+ script to retrieve archives in a variety of mechanisms
+# This should only be used to fetch brand new archives into an empty
+# directory!  You have been warned!
+ARCHIVES_PATH=$HOME/archives/mbox-archives.conf
+
+if [ $# -ge 2 ]; then
+  ARCHIVES_PATH="$2"
+fi
+
+if [ ! -f $ARCHIVES_PATH ] ; then
+  echo $ARCHIVES_PATH not found.  Exiting.
+  exit 1
+fi
+
+source $ARCHIVES_PATH
+
+for i in ${ARCHIVES} ; do
+    dirname=${${(P)i}[1]}
+    mboxtype=${${(P)i}[2]}
+    mboxpath=${${(P)i}[3]}
+    mboxdest=${${(P)i}[4]}
+
+    if [ "$dirname" = "$1" ]; then
+        echo Creating $dirname archive
+
+        if test -d $MBOX_DIR/$dirname; then
+          echo "Directory already exists.  Will not overwrite directory."
+        else
+
+          mkdir -p $MBOX_DIR/$dirname
+
+          case "$mboxtype" in
+          rsync)
+            rsync -az $mboxpath/ $mboxdest/
+            cp -rp $mboxdest/* $MBOX_DIR/$dirname
+            ;;
+          wget)
+            echo "Not supported to catch up via wget"
+            ;;
+          local|private)
+            cp -rp $mboxdest/* $MBOX_DIR/$dirname
+            ;;
+          *)
+            echo "Say what?"
+            exit 1
+            ;;
+          esac
+
+        fi
+
+        # Just skip over the mod_mbox processing right now.
+
+        have_all=1
+        for i in $MBOX_DIR/$dirname/*.gz; do
+          if [ ! -f $MBOX_DIR/$dirname/`basename $i .gz`.mbox ]; then
+            have_all=0
+            break;
+          fi
+        done;
+        if [ $have_all -eq 1 ]; then
+          echo "We believe $dirname has already been processed.  Skipping!"
+          continue;
+        fi
+
+        # For this section, we need to be in the archive directory.
+        pushd $MBOX_DIR/$dirname
+
+        # We may have gotten a lot of files.  They will either be .gz or
+        # no suffix.  Start by getting rid of all of the .gz's.
+        for i in *.gz; do
+          echo "Uncompressing $i."
+          gzcat $i > `basename $i .gz`.mbox
+        done
+
+        # We want everything that isn't related to a gz file to be 
+        # symlinked over to be a .mbox file
+        for i in ^*.(mbox|gz|pag|dir|msgid); do
+            if [ $i = "index.html" ]; then 
+              continue;
+            fi
+            echo "Linking $i."
+            ln -s $i $i.mbox
+        done
+
+        if [ -x $APACHE_DIR/bin/mod-mbox-util ]; then
+          echo "Generating index for $dirname."
+          $APACHE_DIR/bin/mod-mbox-util -c $MBOX_DIR/$dirname
+        else
+          for i in *.mbox; do
+            echo "Generating index for $i"
+            $APACHE_DIR/bin/generate_index $i
+            $APACHE_DIR/bin/load_msgid $i > $i.msgid
+          done
+        fi
+
+        popd
+    fi
+done
+
+if [ ! -x $APACHE_DIR/bin/mod-mbox-util ]; then
+  # Create the indexes
+  echo "Creating index for $1"
+  $SCRIPT_DIR/create-index $1
+fi

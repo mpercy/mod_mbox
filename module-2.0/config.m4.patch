@@ -1,0 +1,23 @@
+Index: config.m4
+===================================================================
+RCS file: /home/cvs/httpd-2.0/modules/experimental/config.m4,v
+retrieving revision 1.11
+diff -u -r1.11 config.m4
+--- config.m4	2001/05/22 20:40:55	1.11
++++ config.m4	2001/08/11 07:24:31
+@@ -1,6 +1,8 @@
+ 
+ APACHE_MODPATH_INIT(experimental)
+ 
++MBOX_OBJECTS="mod_mbox.lo mbox_parse.lo mbox_sort.lo mbox_thread.lo"
++
+ APACHE_MODULE(charset_lite, character set translation, , , no)
+ APACHE_MODULE(cache, dynamic file caching, , , no)
+ APACHE_MODULE(disk_cache, disk caching module, , , no)
+@@ -12,5 +14,6 @@
+ APACHE_MODULE(optional_hook_import, example optional hook importer, , , no)
+ APACHE_MODULE(optional_fn_import, example optional function importer, , , no)
+ APACHE_MODULE(optional_fn_export, example optional function exporter, , , no)
++APACHE_MODULE(mbox, mbox reader, $MBOX_OBJECTS, , no)
+ 
+ APACHE_MODPATH_FINISH

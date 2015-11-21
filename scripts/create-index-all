@@ -1,0 +1,20 @@
+#!/usr/bin/env zsh
+# ZSH 4+ script to create indexes for archives
+ARCHIVES_PATH=$HOME/archives/mbox-archives.conf
+
+if [ $# -ge 1 ]; then
+  ARCHIVES_PATH="$1"
+fi
+
+if [ ! -f $ARCHIVES_PATH ] ; then
+  echo $ARCHIVES_PATH not found.  Exiting.
+  exit 1
+fi
+
+source $ARCHIVES_PATH
+
+for i in ${ARCHIVES} ; do
+    dirname=${${(P)i}[1]}
+
+    $SCRIPT_DIR/create-index $dirname $ARCHIVES_PATH
+done

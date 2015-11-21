@@ -1,0 +1,54 @@
+#!/usr/bin/env zsh
+# ZSH 4+ script to retrieve archives in a variety of mechanisms
+# This should only be used to fetch brand new archives into an empty
+# directory!  You have been warned!
+ARCHIVES_PATH=$HOME/archives/mbox-archives.conf
+
+source $ARCHIVES_PATH
+
+for i in ${ARCHIVES} ; do
+    dirname=${${(P)i}[1]}
+    mboxtype=${${(P)i}[2]}
+    mboxpath=${${(P)i}[3]}
+
+    echo $dirname
+    if [ $dirname = "$1" ]; then
+        echo Creating $dirname archive
+
+        if [ ! -d $MBOX_DIR/$dirname ]; then
+            echo "Directory does not exist.  Skipping."
+            continue;
+        fi
+
+        rm $MBOX_DIR/$dirname/*.mbox.msgid
+
+        # For this section, we need to be in the archive directory.
+        pushd $MBOX_DIR/$dirname
+
+        # We may have gotten a lot of files.  They will either be .gz or
+        # no suffix.  Start by getting rid of all of the .gz's.
+        for i in *.gz; do
+          echo "Uncompressing $i."
+          gzcat $i > `basename $i .gz`.mbox
+        done
+
+        # We want everything that isn't related to a gz file to be 
+        # symlinked over to be a .mbox file
+        for i in ^*.(mbox|gz|dir|pag|msgid|html); do
+            echo "Linking $i."
+            ln -s $i $i.mbox
+        done
+
+        if [ -x $APACHE_DIR/bin/mod-mbox-util ]; then
+          $APACHE_DIR/bin/mod-mbox-util -u $MBOX_DIR/$dirname 2>&1 | grep -v 'Reading List-Post header from.*failed'
+        else
+          for i in *.mbox; do
+            echo "Generating index for $i."
+            $APACHE_DIR/bin/generate_index $i
+            $APACHE_DIR/bin/load_msgid $i > $i.msgid
+          done
+        fi
+
+        popd
+    fi
+done

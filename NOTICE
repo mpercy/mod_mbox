@@ -1,0 +1,19 @@
+This product includes software developed by
+The Apache Software Foundation (http://www.apache.org/).
+
+Originally developed by Justin Erenkrantz, eBuilt.
+
+The SLL sort in mbox_sort.c is based on the public-domain algorithm by
+Philip J. Erdelsky (pje@acm.org).  You may find the algorithm and
+notes at: <http://www.efgh.com/software/llmsort.htm>
+
+The threading code in mbox_thread.c is based Jamie Zawinski's
+description of the Netscape 3.x threading algorithm at:
+<http://www.jwz.org/doc/threading.html>
+
+The 'mime_decode_qp' and `mime_decode_b64' routine are taken from
+metamail 2.7, which is copyright (c) 1991 Bell Communications
+Research, Inc. (Bellcore).
+
+This product includes software developed by Edward Rudd and Paul
+Querna (http://www.outoforder.cc/).

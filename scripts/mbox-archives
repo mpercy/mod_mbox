@@ -1,0 +1,12 @@
+APACHE_DIR=/home/jerenk/pkg/httpd-head
+MBOX_DIR=/home/jerenk/public_html/archives
+SCRIPT_DIR=/home/jerenk/work/httpd-mbox/scripts
+SERVER_LOC=http://scotch.ics.uci.edu/~jerenk/archives
+
+# Add rsync to the PATH
+PATH=/pkg/rsync-2.4.6/bin:$PATH
+
+export APACHE_DIR MBOX_DIR SCRIPT_DIR PATH
+
+setopt GLOB NULL_GLOB EXTENDED_GLOB
+source $SCRIPT_DIR/mbox-archives.list

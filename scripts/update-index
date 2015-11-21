@@ -1,0 +1,85 @@
+#!/usr/bin/env zsh
+# ZSH 4+ script to retrieve archives in a variety of mechanisms
+DATE=`TZ=PST8PDT date -u "+%Y%m"`
+ARCHIVES_PATH=$HOME/archives/mbox-archives.conf
+RSYNC=${RSYNC:-/usr/local/bin/rsync}
+
+if [ $# -ge 1 ]; then
+  ARCHIVES_PATH="$1"
+fi
+
+if [ ! -f $ARCHIVES_PATH ] ; then
+  echo $ARCHIVES_PATH not found.  Exiting.
+  exit 1
+fi
+
+source $ARCHIVES_PATH
+
+if [ "x$PRE_SYNC" != "x" ]; then
+  $RSYNC --delete -az $PRE_SYNC_SOURCE $PRE_SYNC_DEST
+fi
+
+for i in ${ARCHIVES} ; do
+    dirname=${${(P)i}[1]}
+    mboxtype=${${(P)i}[2]}
+    mboxpath=${${(P)i}[3]}
+    mboxdest=${${(P)i}[4]}
+
+    # echo Updating $dirname from $mboxpath via $mboxtype
+
+    mboxfile=$MBOX_DIR/$dirname/$DATE.mbox
+    mboxfile2=$MBOX_DIR/$dirname/$DATE
+
+    case "$mboxtype" in
+    rsync)
+        # Copy into the pristine location
+        $RSYNC --delete -az $mboxpath/ $mboxdest/
+        # Sync over to the mod_mbox location
+        $RSYNC -az $mboxdest/ $MBOX_DIR/$dirname/
+        ;;
+    wget)
+        wget -q $mboxpath -O $mboxfile
+        ;;
+    local)
+        cp $mboxpath $mboxfile
+        if [ -f $mboxpath ]; then
+            chmod 644 $mboxfile
+        fi
+        ;;
+    private)
+        $RSYNC -az $mboxdest/ $MBOX_DIR/$dirname/
+        ;;
+    *)
+        echo "Say what?"
+        exit 1
+        ;;
+    esac
+    # We got the file successfully
+
+    # We may have gotten it without .mbox suffix
+    if [ -f $mboxfile2 -a ! -h $mboxfile ]; then
+        # Have we already done the symlink? 
+        # Get rid of the old one that isn't a symlink.
+        if [ -f $mboxfile ]; then
+            rm $mboxfile
+        fi
+        ln -sf $mboxfile2 $mboxfile
+    fi
+
+    if [ -x $APACHE_DIR/bin/mod-mbox-util ]; then
+      # XXX joes added these touches on 2006-06-02 to force a reindex
+      touch $mboxfile; touch $mboxfile2
+      $APACHE_DIR/bin/mod-mbox-util -u $MBOX_DIR/$dirname  2>&1 | grep -v 'Reading List-Post header from.*failed'
+    else
+      if [ -f $mboxfile ]; then
+        $APACHE_DIR/bin/generate_index $mboxfile
+        $APACHE_DIR/bin/load_msgid $mboxfile > $mboxfile.msgid
+      fi
+    fi
+done
+
+if [ -x $APACHE_DIR/bin/mod-mbox-util ]; then
+  $SCRIPT_DIR/site-index.py > /x1/mail-archives.apache.org/mod_mbox/index.html
+else
+  $SCRIPT_DIR/create-index-all $ARCHIVES_PATH
+fi

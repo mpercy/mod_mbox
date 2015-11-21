@@ -1,0 +1,11 @@
+#!/usr/bin/env zsh
+# ZSH 4+ script to retrieve archives in a variety of mechanisms
+# This should only be used to fetch brand new archives into an empty
+# directory!  You have been warned!
+ARCHIVES_PATH=/home/jerenk/work/httpd-mbox/scripts/mbox-archives
+
+source $ARCHIVES_PATH
+
+for i in ${ARCHIVES} ; do
+    $SCRIPT_DIR/reindex-archive ${${(P)i}[1]}
+done

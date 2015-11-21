@@ -1,0 +1,23 @@
+#!/usr/bin/env zsh
+# You need to run this file and place it as mbox-archives.list and all will
+# be well.
+
+prefix="$HOME/archives/raw"
+
+lists=()
+rsync www.apache.org:: > sites.$$
+lists=(`grep -- "site " sites.$$ | grep -v cvs | cut -d " " -f 1` www-site)
+rm sites.$$
+
+i=1
+while [ $i -le ${#lists} ]; do
+  if [ ! -d $prefix/$lists[$i]/mail ]; then
+    echo Creating $prefix/$lists[$i]/mail
+    mkdir -p $prefix/$lists[$i]/mail
+    rsync -az --exclude '*.gz' --exclude '[0-9]*' www.apache.org::$lists[$i]/mail/ $prefix/$lists[$i]/mail
+    if [ $? -ne 0 ]; then
+      rmdir $prefix/$lists[$i]/mail
+    fi
+  fi
+  ((i=1+$i))
+done

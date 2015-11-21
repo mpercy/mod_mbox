@@ -1,0 +1,10 @@
+25 * * * * $HOME/scripts/update-index
+# Re-create the site index pages to pick up any new lists once a day.
+0 12 * * *  $HOME/mbox-raw-rsync.sh
+10 12 * * * $HOME/scripts/create-archive-list $HOME/archives/raw > $HOME/archives/mbox-archives.list
+45 12 * * * $HOME/scripts/site-index.py > /x1/mail-archives.apache.org/mod_mbox/index.html
+#55 12 * * * $HOME/scripts/site-sitemap.py '/x1/mail-archives.apache.org/mod_mbox/sitemap.%d.xml'
+55 12 * * * $HOME/scripts/crontab-sitemap.sh
+# sync'd at 3:30am pacific time; ~12 noon ajax time.
+30 14 1 * * $HOME/scripts/update-index-monthly
+

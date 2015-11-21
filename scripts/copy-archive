@@ -1,0 +1,20 @@
+#!/pkg/zsh-4.0.6/bin/zsh
+ARCHIVES_PATH=/home/jerenk/work/httpd-mbox/scripts/mbox-archives
+
+source $ARCHIVES_PATH
+
+for i in ${ARCHIVES} ; do
+  src_dir=${${(P)i}[4]}
+  dest_dir=$MBOX_DIR/${${(P)i}[1]}
+
+  if [ ! -d $src_dir ] ; then
+    echo "$src_dir does not exist!  Skipping."
+  else
+    if [ ! -d $dest_dir ] ; then
+      echo "Making $dest_dir"
+      mkdir -p $dest_dir
+    fi
+    echo "Copying $src_dir to $dest_dir"
+    rsync -a ${${(P)i}[4]} $MBOX_DIR/${${(P)i}[1]}
+  fi
+done

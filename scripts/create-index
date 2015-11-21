@@ -1,0 +1,62 @@
+#!/usr/bin/env zsh
+# ZSH 4+ script to create indexes for archives
+ARCHIVES_PATH=$HOME/archives/mbox-archives.conf
+
+if [ $# -ge 2 ]; then
+  ARCHIVES_PATH="$2"
+fi
+
+if [ ! -f $ARCHIVES_PATH ] ; then
+  echo $ARCHIVES_PATH not found.  Exiting.
+  exit 1
+fi
+
+source $ARCHIVES_PATH
+
+for i in ${ARCHIVES} ; do
+    dirname=${${(P)i}[1]}
+    mboxtype=${${(P)i}[2]}
+    mboxpath=${${(P)i}[3]}
+
+    if [ "$dirname" != "$1" ] ; then
+      continue
+    fi
+    #echo Updating $dirname index
+    tlpname=`echo $dirname | cut -d '-' -f 1`
+    listname=`echo $dirname | cut -d '-' -f 2-`
+    fullname="$listname@$tlpname.apache.org"
+
+    cat > $MBOX_DIR/$dirname/index.html <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+  <title>$fullname Mailing Lists</title>
+</head>
+<!-- Background white, links blue (unvisited), navy (visited), red
+(active) -->
+ <body
+  bgcolor="#FFFFFF" text="#000000" link="#0000FF"
+  vlink="#000080" alink="#FF0000">
+<h2>$fullname index on <a href="$SERVER_LOC">$SERVER_NAME</a>.</h2>
+<table width="100%">
+<tr><th align="left" width="15%">Date</th><th align="left" width="85%">Sorted by</th></tr>
+EOF
+
+    cd $MBOX_DIR/$dirname
+    for i in *.mbox ; do
+        yearname=`basename $i .mbox | cut -b1-4`
+        moname=`basename $i .mbox | cut -b5-6`
+        echo "<tr><td>$moname/$yearname</td><td><a href=\"$i/threads.html\">Threads</a> <a href=\"$i/index.html\">Date</a> <a href=\"$i/authors.html\">Authors</a></td></tr>" >> index.html
+        if [ -n $moname -a $moname -eq 12 ]; then
+          echo "<tr><td colspan="2"><hr/></td></tr>" >> index.html
+        fi
+    done
+
+    cat >> $MBOX_DIR/$dirname/index.html <<EOF
+</table>
+</body>
+</html>
+EOF
+done

@@ -1,0 +1,58 @@
+Changes for mod_mbox 0.2
+
+  *) Try to obtain the list post address from the file .listname if no
+     List-Post header is found. PR 53120. [Daniel Shahaf, Stefan Fritsch]
+
+  *) Convert mails and From and Subject headers to UTF-8.
+     Re-indexing of all mbox files is necessary.  The minimum required httpd
+     version is now 2.3.15. PR 48864. PR 52182. PR 52195.
+     [Stefan Fritsch]
+
+  *) Fix MIME parsing bugs that resulted in "An error occured while fetching
+     this message, sorry !". PR 52584. [Stefan Fritsch]
+
+  *) The MIME and encoding fixes above also fix invalid XML to be sent, making
+     the ajax interface fail. PR 52753. [Stefan Fritsch]
+
+  *) Fix handling of messages with '%' in msg-id. PR 50267. [Stefan Fritsch]
+
+  *) Fix up non-printable character support with Firefox and Google Chrome
+     over AJAX interfaces.  [Justin Erenkrantz]
+
+  *) Google's Summer of Code 2005 work release : major front-end module
+     rewrite. [Maxime Petazzoni]
+
+  *) Added MboxStyle, MboxScript, MboxHideEmpty, MboxRootPath and
+     MboxAntispam configuration directives. [Maxime Petazzoni]
+
+  *) Better implementation of the MIME multipart structure parser,
+     with part viewing and downloading. [Maxime Petazzoni]
+
+  *) Support for RFC 2047 MIME headers decoding. [Maxime Petazzoni]
+
+  *) Use built-in mbox_date_parse_rfc() until APR's date parsing is
+     fixed. [Maxime Petazzoni]
+
+  *) XHTML and XML output support. AJAX dynamic browser.
+     [Maxime Petazzoni].
+
+  *) Fixed typo in configure.ac [Justin Erenkrantz]
+
+  *) Skip empty mbox files for purposes of determining list info.
+     [Justin Erenkrantz]
+
+  *) Decline request if we don't have a cache file instead of erroring
+     out. [Justin Erenkrantz]
+
+  *) Don't look for thread context if calculate_thread returned
+     NULL. [Paul Querna]
+
+  *) Added support for Atom 1.0 feeds to mod_mbox indexes.
+     [Paul Querna]
+
+  *) Updated to build mechanism so mod_mbox can build on FreeBSD and
+     Tiger. [Sander Temme]
+
+  *) Use a built-in strcasestr function, copied from ap_strcasestr()
+     so that mod-mbox-util, which is not linked against HTTPd, can
+     build and run on Solaris. [Maxime Petazzoni, Paul Querna]

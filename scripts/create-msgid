@@ -1,0 +1,34 @@
+#!/usr/bin/env zsh
+# ZSH 4+ script to retrieve archives in a variety of mechanisms
+# This should only be used to fetch brand new archives into an empty
+# directory!  You have been warned!
+ARCHIVES_PATH=$HOME/archives/mbox-archives.conf
+
+if [ $# -ge 2 ]; then
+  ARCHIVES_PATH="$2"
+fi
+
+if [ ! -f $ARCHIVES_PATH ] ; then
+  echo $ARCHIVES_PATH not found.  Exiting.
+  exit 1
+fi
+
+source $ARCHIVES_PATH
+
+for i in ${ARCHIVES} ; do
+    dirname=${${(P)i}[1]}
+    mboxtype=${${(P)i}[2]}
+    mboxpath=${${(P)i}[3]}
+    mboxdest=${${(P)i}[4]}
+
+    if [ "$dirname" = "$1" ]; then
+        echo Creating $dirname Message-ID cache
+
+        pushd $MBOX_DIR/$dirname
+        for i in *.mbox; do
+          echo $i
+          $APACHE_DIR/bin/mod-mbox-util -m $i > $i.msgid
+        done
+        popd
+    fi
+done

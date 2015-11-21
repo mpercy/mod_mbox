@@ -1,0 +1,65 @@
+#!/usr/bin/env zsh
+# ZSH 4+ script to create indexes for archives
+ARCHIVES_PATH=$HOME/archives/mbox-archives.conf
+
+if [ $# -ge 1 ]; then
+  ARCHIVES_PATH="$1"
+fi
+
+if [ ! -f $ARCHIVES_PATH ] ; then
+  echo $ARCHIVES_PATH not found.  Exiting.
+  exit 1
+fi
+
+source $ARCHIVES_PATH
+
+cat > $MBOX_DIR/index.html <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+  <title>Available Mailing Lists</title>
+</head>
+<!-- Background white, links blue (unvisited), navy (visited), red
+(active) -->
+ <body
+  bgcolor="#FFFFFF" text="#000000" link="#0000FF"
+  vlink="#000080" alink="#FF0000">
+<h2>Welcome to the mail archives on $SERVER_NAME.</h2>
+<table width="100%">
+<tr valign="top"><td>
+<ul>
+EOF
+
+(( mid_count = ${#ARCHIVES} / 2 ))
+count=0
+for i in ${ARCHIVES} ; do
+    dirname=${${(P)i}[1]}
+    mboxtype=${${(P)i}[2]}
+    mboxpath=${${(P)i}[3]}
+
+    tlpname=`echo $dirname | cut -d '-' -f 1`
+    listname=`echo $dirname | cut -d '-' -f 2-`
+    #echo Updating $dirname index $listname @ $tlpname
+
+    echo "<li><a href=\"$dirname/\">$listname@$tlpname.apache.org</a></li>" >> $MBOX_DIR/index.html
+
+    if [ $count -eq $mid_count ]; then
+      cat >> $MBOX_DIR/index.html <<EOF
+</ul>
+</td><td>
+<ul>
+EOF
+    fi
+
+    (( count = $count + 1 ))
+done
+
+cat >> $MBOX_DIR/index.html <<EOF
+</ul>
+</td></tr>
+</table>
+</body>
+</html>
+EOF

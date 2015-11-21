@@ -1,0 +1,11 @@
+#!/pkg/zsh-4.0.6/bin/zsh
+# ZSH 4+ script to retrieve archives in a variety of mechanisms
+# This should only be used to fetch brand new archives into an empty
+# directory!  You have been warned!
+ARCHIVES_PATH=/home/jerenk/work/httpd-mbox/scripts/mbox-archives
+
+source $ARCHIVES_PATH
+
+for i in ${ARCHIVES} ; do
+    echo ${${(P)i}[1]} ${${(P)i}[3]}
+done

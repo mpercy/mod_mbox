@@ -1,0 +1,22 @@
+The files in here are what are used to maintain the apachelabs.org
+mbox archive repository.  They may not work, or they just might.  Enjoy!
+
+Some of these scripts were originally for internal use at eBuilt.
+
+create-archive-list:  Create the mbox-archvies.list from fetched copy
+catchup-archive:      Reindex a list from raw rsync (.gz and .mbox files only)
+update-index:         Hourly (or more) script to process current month's mbox
+update-index-monthly: Handles the month transition.
+create-index:         Creates per-list index page
+search-msgid:         CGI script for searching for a particular msgid
+fetch-archive-list:   Fetch current list dirs from rsync master (obsolete)
+
+To sync new lists:
+
+1. create-archive-list ~jerenkrantz/archives/raw > ~jerenkrantz/archives/mbox-archives.list
+
+To recreate the archives from the master copy (i.e. changed master mbox files):
+
+1. wait for rsync (update-index) to sync up the master archives
+2. rm -rf ~jerenkrantz/archives/mod_mbox/$list
+3. catchup-archive $list

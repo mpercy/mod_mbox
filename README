@@ -1,0 +1,13 @@
+                      mod_mbox
+                      --------
+
+mod_mbox is a mailing list archive browser. Functionality includes:
+
+ * A dynamic browsing interface, using AJAX (Asynchronous Javascript And XML)
+ * A flat, Javascript-less interface, using static XHTML
+ * Mail attachments and MIME parts viewing and downloading
+
+Minimum requirement for build is httpd 2.3.15 and apr-util compiled with iconv.
+
+For more information about mod_mbox and documentation, please visit the
+mod_mbox website at <http://httpd.apache.org/mod_mbox/>.
