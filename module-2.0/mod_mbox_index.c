@@ -184,7 +184,7 @@ int mbox_index_handler(request_rec *r)
     if (r->args && strstr(r->args, "format=sitemap") != NULL) {
         return mbox_sitemap_handler(r, mli);
     }
-    
+
     /* Only allow GETs */
     r->allowed |= (AP_METHOD_BIT << M_GET);
     if (r->method_number != M_GET) {
@@ -208,12 +208,8 @@ int mbox_index_handler(request_rec *r)
         return r->status;
     }
 
-    ap_rputs("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n", r);
-    ap_rputs("<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"\n",
-             r);
-    ap_rputs("\"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n\n", r);
-
-    ap_rputs("<html xmlns=\"http://www.w3.org/1999/xhtml\">\n", r);
+    ap_rputs("<!DOCTYPE html>\n", r);
+    ap_rputs("<html>\n", r);
     ap_rputs(" <head>\n", r);
     ap_rputs
         ("  <meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\" />\n",
@@ -247,7 +243,7 @@ int mbox_index_handler(request_rec *r)
 
     ap_rputs(" </head>\n\n", r);
 
-    ap_rputs(" <body id=\"archives\" onload=\"indexLinks ();\">\n", r);
+    ap_rputs(" <body id=\"archives\">\n", r);
     ap_rprintf(r, "  <h1>Mailing list archives: %s@%s</h1>\n",
                ESCAPE_OR_BLANK(r->pool, mli->list),
                ESCAPE_OR_BLANK(r->pool, mli->domain));

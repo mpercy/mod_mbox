@@ -2,13 +2,10 @@ html { margin: 0; padding: 0; }
 
 body
 {
-  margin: 0;
-  padding: 0;
   font-size: small;
-  background-color: white;
-  background-image: url("/archives/asf_logo_simple.png");
-  background-repeat: no-repeat;
-  background-position: 98% 1em;
+  background: #fff url("/archives/asf_logo_simple.png") no-repeat 98% 1em;
+  padding: 0 2%;
+  margin: 0;
 }
 
 a:hover { text-decoration: underline; }
@@ -16,16 +13,16 @@ a:hover { text-decoration: underline; }
 h1
 {
   font-size: x-large;
-  margin: 1em 2% 0.4em 2%;
   padding: 0;
+  margin: 1em 0 0.4em 0;
 }
 
 h5
 {
-  margin: 0 2%;
-  padding: 0;
   font-size: 90%;
   font-style: italic;
+  padding: 0;
+  margin: 0 0 4px 0;
 }
 
 p#lastupdated
@@ -58,7 +55,6 @@ table
   margin: 0;
   border-spacing: 0;
   border-collapse: collapse;
-
   border: 1px #900 solid;
   border-top: none;
 }
@@ -78,23 +74,11 @@ table thead th a, table tfoot th a { color: white; }
 table td { padding: 0.2em 0.5em; }
 table th a { text-decoration: underline; }
 
-table#grid
-{
-  margin: 1em 2%;
-  width: 96%;
-  border: none;
-}
-
-table#grid td       { vertical-align: top; }
-table#grid td.left  { width: 50%; }
-table#grid td.right { width: 50%; }
-
-/** List info
-   */
+/* List info */
 table#listinfo
 {
-  margin: 1em 2%;
-  width: 96%;
+  width: 100%;
+  margin: 1em 0;
 }
 
 table#listinfo td.left  { background: #ddd; font-weight: bold;
@@ -102,13 +86,31 @@ table#listinfo td.left  { background: #ddd; font-weight: bold;
                           width: 20%; }
 table#listinfo td.right { background: #eee; text-align: left; }
 
-/** Year
-   */
-table.year { width: 100%; }
+/* Layout grid for year tables. */
+table#grid
+{
+  width: 100%;
+  border: none;
+  margin: 1em 0;
+}
 
-table.year tr td.date     { background: #ddd; width: 20%;
-                            text-align: center; padding-right: 1em;
-                            font-weight: bold; white-space: nowrap; }
+table#grid td { vertical-align: top; }
+table#grid > tbody > tr > td { padding: 0; }
+table#grid td.left { width: 51%; }
+table#grid td.right { width: 49%; }
+
+table#grid td.left .year-cont { padding-right: 1em; }
+
+/* Year tables, which display mboxes per year. */
+table.year { width: 100%; }
+table.year tr td.date {
+  font-weight: bold;
+  text-align: center;
+  width: 20%;
+  padding: 5px 1em 0 0;
+  background: #ddd;
+  white-space: nowrap;
+}
 table.year tr td.links    { background: #eee; width: 70%; }
 table.year tr td.msgcount { background: #ddd; width: 10%; text-align: center; }
 
@@ -116,19 +118,25 @@ table.year tr:hover td.date     { background: #eee; }
 table.year tr:hover td.links    { background: white; }
 table.year tr:hover td.msgcount { background: #eee; }
 
+/* Container div to reset the relative width for its children since we have
+   applied body padding. */
+#cont {
+  width: 100%;
+}
 
-/** Box list
-   */
-table#boxlist
-{
-  position: absolute;
-  top: 6em;
-  left: 2%;
-  right: 88%;
-  width: 10%;
+/* Shim for float clearing purposes. */
+#shim {
+  clear: both;
   margin-bottom: 2em;
 }
 
+/* mbox list. */
+#boxlist-cont {
+  float: left;
+  width: 120px;
+}
+
+table#boxlist { width: 100%; }
 table#boxlist tr       { background: #eee;  }
 table#boxlist tr:hover { background: white; }
 
@@ -143,18 +151,13 @@ table#boxlist td.msgcount { text-align: right; }
 table#boxlist td.box      { white-space: nowrap; }
 table#boxlist td.box a    { display: block;    }
 
-/** Message list
-   */
-table#msglist
+/* Message list. */
+#msglist-cont
 {
-  position: absolute;
-  top: 6em;
-  right: 2%;
-  left: 16%;
-  margin: 0 0 2em 0;
-  width: 82%;
+  margin-left: 140px;
 }
 
+table#msglist { width: 100%; }
 table#msglist thead th.title { text-align: left; white-space: nowrap; }
 table#msglist thead th.pages { text-align: right; }
 table#msglist thead th.sort  { text-align: right; padding-right: 0.3em;
@@ -177,23 +180,17 @@ table#msglist tr:hover td.author  { background: #eee;  }
 table#msglist tr:hover td.subject { background: white; }
 table#msglist tr:hover td.date    { background: #eee;  }
 
-/** Message view
-   */
-table.static#msgview
+/** Message view */
+table#msgview.static
 {
-  position: absolute;
-  top: 6em;
-  right: 2%;
-  left: 2%;
-  margin: 0 0 2em 0;
-  width: 96%;
+  width: 100%;
 }
 
-table.js#msgview
+table#msgview.js
 {
   position: absolute;
   top: 0;
-  right: 2%;
+  right: 0;
   left: 16%;
   margin: 5em 0 2em 0;
   width: 82%;

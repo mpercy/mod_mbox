@@ -255,6 +255,7 @@ apr_status_t mbox_static_boxlist(request_rec *r)
         return HTTP_FORBIDDEN;
     }
 
+    ap_rputs("  <div id=\"boxlist-cont\">\n", r);
     ap_rputs("  <table id=\"boxlist\">\n", r);
     ap_rputs("   <thead><tr><th colspan=\"2\">Box list</th></tr></thead>\n",
              r);
@@ -290,6 +291,7 @@ apr_status_t mbox_static_boxlist(request_rec *r)
 
     ap_rputs("   </tbody>\n", r);
     ap_rputs("  </table>\n", r);
+    ap_rputs("  </div><!-- /#boxlist-cont -->\n", r);
 
     return APR_SUCCESS;
 }
@@ -325,6 +327,7 @@ apr_status_t mbox_static_index_boxlist(request_rec *r, mbox_dir_cfg_t *conf,
                     side = 0;
                 }
 
+                ap_rputs("   <div class=\"year-cont\">\n", r);
                 ap_rputs("   <table class=\"year\">\n", r);
                 ap_rputs("    <thead><tr>\n", r);
                 ap_rprintf(r, "     <th colspan=\"3\">Year %.4s</th>\n",
@@ -359,6 +362,7 @@ apr_status_t mbox_static_index_boxlist(request_rec *r, mbox_dir_cfg_t *conf,
             && (fi[i].filename[3] != fi[i + 1].filename[3])) {
             ap_rputs("    </tbody>\n", r);
             ap_rputs("   </table>\n", r);
+            ap_rputs("   </div><!-- /.year-cont -->\n", r);
             if (side) {
                 ap_rputs("  </td>\n", r);
             }
@@ -723,10 +727,8 @@ static void send_page_header(request_rec *r, const char *title,
     if (!h1)
         h1 = title;
     ap_rprintf(r,
-               "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
-               "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"\n"
-               "\"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n\n"
-               "<html xmlns=\"http://www.w3.org/1999/xhtml\">\n"
+               "<!DOCTYPE html>\n"
+               "<html>\n"
                " <head>\n"
                "  <meta http-equiv=\"Content-Type\" "
                    "content=\"text/html; charset=utf-8\" />\n"
@@ -747,8 +749,6 @@ static void send_page_header(request_rec *r, const char *title,
 
     ap_rputs(" </head>\n\n"
              " <body id=\"archives\"", r);
-    if (add_script)
-        ap_rprintf(r, " onload=\"javascript:loadBrowser ('%s');\"", get_base_uri(r));
     ap_rputs(">\n", r);
 
     ap_rprintf(r, "  <h1>%s</h1>\n\n", h1);
@@ -843,8 +843,14 @@ apr_status_t mbox_static_msglist(request_rec *r, apr_file_t *f,
     }
 
     ap_rprintf(r, "<a href=\"%s\" title=\"Back to the list index\">"
-               "List index</a></h5>", get_base_path(r));
+               "List index</a></h5>\n\n", get_base_path(r));
 
+    ap_rputs("  <div id=\"cont\">\n", r);
+
+    /* Display box list */
+    mbox_static_boxlist(r);
+
+    ap_rputs("  <div id=\"msglist-cont\">\n", r);
     ap_rputs("  <table id=\"msglist\">\n", r);
     ap_rputs("  <thead>\n", r);
     mbox_static_msglist_nav(r, baseURI, pages, current_page, sortFlags);
@@ -896,10 +902,10 @@ apr_status_t mbox_static_msglist(request_rec *r, apr_file_t *f,
     mbox_static_msglist_nav(r, baseURI, pages, current_page, sortFlags);
     ap_rputs("  </tfoot>\n", r);
     ap_rputs("  </table>\n", r);
+    ap_rputs("  </div><!-- /#msglist-cont -->\n", r);
 
-    /* Display box list */
-    mbox_static_boxlist(r);
-
+    ap_rputs(" <div id=\"shim\"></div>\n", r);
+    ap_rputs(" </div><!-- /#cont -->\n", r);
     ap_rputs(" </body>\n", r);
     ap_rputs("</html>", r);
     return OK;
