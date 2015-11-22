@@ -256,8 +256,20 @@ apr_status_t mbox_static_boxlist(request_rec *r)
     }
 
     ap_rputs("  <div id=\"boxlist-cont\">\n", r);
+
+
+    ap_rputs("  <h5>\n", r);
+    if (conf->root_path) {
+        ap_rprintf(r, "<a href=\"%s\" title=\"Back to the archives depot\">"
+                   "Site index</a> &middot; ", conf->root_path);
+    }
+    ap_rprintf(r, "<a href=\"%s\" title=\"Back to the list index\">"
+               "List index</a>", get_base_path(r));
+    ap_rputs("</h5>\n\n", r);
+
+
     ap_rputs("  <table id=\"boxlist\">\n", r);
-    ap_rputs("   <thead><tr><th colspan=\"2\">Box list</th></tr></thead>\n",
+    ap_rputs("   <thead><tr><th colspan=\"2\">Month</th></tr></thead>\n",
              r);
     ap_rputs("   <tbody>\n", r);
 
@@ -646,6 +658,21 @@ apr_status_t mbox_xml_msglist(request_rec *r, apr_file_t *f, int sortFlags)
     return OK;
 }
 
+static void send_link_if_not_active(request_rec *r,
+                                    int is_active,
+                                    const char* label,
+                                    const char *prefix, const char *suffix,
+                                    const char *part1, const char *part2,
+                                    const char *part3, const char *part4)
+{
+    if (is_active) {
+        ap_rprintf(r, "%s%s%s", prefix, label, suffix);
+    } else {
+        ap_rprintf(r, "%s<a href=\"%s%s%s%s\">%s</a>%s",
+                      prefix, part1, part2, part3, part4, label, suffix);
+    }
+}
+
 /* Display the page selector.
  *
  * FIXME: improve the algorithm in order to handle long pages list.
@@ -653,36 +680,29 @@ apr_status_t mbox_xml_msglist(request_rec *r, apr_file_t *f, int sortFlags)
 static void mbox_static_msglist_page_selector(request_rec *r, const char *baseURI,
                                               int pages, int current_page)
 {
-    int i;
+    /* If we don't have more than one page, the page selector is useless. */
+    if (pages == 1) {
+        ap_rprintf(r, "<span class=\"num-pages\">Showing page %d of %d</span>\n",
+                      current_page + 1, pages);
+    } else {
+        // TODO: Get rid of the calls to apr_psprintf().
+        ap_rputs("<span class=\"page-selector\">", r);
+        send_link_if_not_active(r, current_page == 0, "&laquo; Previous",
+                                "", "", baseURI, r->path_info, "?",
+                                apr_psprintf(r->pool, "%d", current_page - 1));
 
-    /* If we don't have more than one page, the page selector is
-       useless. Just return silently. */
-    if (pages <= 1) {
-        return;
-    }
-
-    if (current_page) {
-        ap_rprintf(r, "<a href=\"%s%s?%d\">&laquo; Previous</a> &middot; ",
-                   baseURI, r->path_info, current_page - 1);
-    }
-
-    for (i = 0; i < pages; i++) {
-        if (i != 0) {
+        for (int i = 0; i < pages; i++) {
             ap_rputs(" &middot; ", r);
+            send_link_if_not_active(r, current_page == i,
+                                    apr_psprintf(r->pool, "%d", i + 1),
+                                    "", "", baseURI, r->path_info, "?",
+                                    apr_psprintf(r->pool, "%d", i));
         }
-
-        if (i != current_page) {
-            ap_rprintf(r, "<a href=\"%s%s?%d\">%d</a>",
-                       baseURI, r->path_info, i, i + 1);
-        }
-        else {
-            ap_rprintf(r, "%d", i + 1);
-        }
-    }
-
-    if (current_page + 1 < pages) {
-        ap_rprintf(r, " &middot; <a href=\"%s%s?%d\">Next &raquo;</a>",
-                   baseURI, r->path_info, current_page + 1);
+        ap_rputs(" &middot; ", r);
+        send_link_if_not_active(r, current_page + 1 >= pages, "Next &raquo;",
+                                "", "", baseURI, r->path_info, "?",
+                                apr_psprintf(r->pool, "%d", current_page + 1));
+        ap_rputs("</span>\n", r);
     }
 }
 
@@ -690,31 +710,14 @@ static void mbox_static_msglist_nav(request_rec *r, const char *baseURI,
                                     int pages, int current_page,
                                     int sortFlags)
 {
-    ap_rputs
-        ("   <tr><th class=\"title\"><a href=\"browser\">Message list</a></th>",
-         r);
-
-    ap_rputs("<th class=\"pages\">", r);
-    mbox_static_msglist_page_selector(r, baseURI, pages, current_page);
-    ap_rputs("</th>", r);
-
-    ap_rputs("<th class=\"sort\">", r);
-    if (sortFlags == MBOX_SORT_THREAD) {
-        ap_rprintf(r, "Thread &middot; "
-                   "<a href=\"%s/author\">Author</a> &middot; "
-                   "<a href=\"%s/date\">Date</a>", baseURI, baseURI);
-    }
-    else if (sortFlags == MBOX_SORT_AUTHOR) {
-        ap_rprintf(r, "<a href=\"%s/thread\">Thread</a> &middot; "
-                   "Author &middot; "
-                   "<a href=\"%s/date\">Date</a>", baseURI, baseURI);
-    }
-    else {
-        ap_rprintf(r, "<a href=\"%s/thread\">Thread</a> &middot; "
-                   "<a href=\"%s/author\">Author</a> &middot; "
-                   "Date", baseURI, baseURI);
-    }
-    ap_rputs("</th></tr>\n", r);
+    ap_rputs("   <tr>", r);
+    send_link_if_not_active(r, sortFlags == MBOX_SORT_AUTHOR, "Author",
+                            "<th>", "</th>", baseURI, "/", "author", "");
+    send_link_if_not_active(r, sortFlags == MBOX_SORT_THREAD, "Thread",
+                            "<th>", "</th>", baseURI, "/", "thread", "");
+    send_link_if_not_active(r, sortFlags == MBOX_SORT_DATE, "Date",
+                            "<th>", "</th>", baseURI, "/", "date", "");
+    ap_rputs("</tr>\n\n", r);
 }
 
 /* Send page header */
@@ -826,22 +829,15 @@ apr_status_t mbox_static_msglist(request_rec *r, apr_file_t *f,
                              get_base_name(r), month, year),
                 NULL));
 
-    ap_rputs("  <h5>\n", r);
-
-    if (conf->root_path) {
-        ap_rprintf(r, "<a href=\"%s\" title=\"Back to the archives depot\">"
-                   "Site index</a> &middot; ", conf->root_path);
-    }
-
-    ap_rprintf(r, "<a href=\"%s\" title=\"Back to the list index\">"
-               "List index</a></h5>\n\n", get_base_path(r));
-
     ap_rputs("  <div id=\"cont\">\n", r);
 
     /* Display box list */
     mbox_static_boxlist(r);
 
     ap_rputs("  <div id=\"msglist-cont\">\n", r);
+    ap_rputs("<h5>", r);
+    mbox_static_msglist_page_selector(r, baseURI, pages, current_page);
+    ap_rputs("</h5>", r);
     ap_rputs("  <table id=\"msglist\">\n", r);
     ap_rputs("  <thead>\n", r);
     mbox_static_msglist_nav(r, baseURI, pages, current_page, sortFlags);

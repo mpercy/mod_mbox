@@ -17,13 +17,18 @@ h1
   margin: 1em 0 0.4em 0;
 }
 
-h5
-{
-  font-size: 90%;
-  font-style: italic;
+h5 {
+  font-size: 100%;
+  font-weight: normal;
   padding: 0;
   margin: 0 0 4px 0;
 }
+
+/*
+h5 .num-pages { float:right; }
+h5 .page-selector { display:block; }
+*/
+h5 .shim { margin:0; }
 
 p#lastupdated
 {
