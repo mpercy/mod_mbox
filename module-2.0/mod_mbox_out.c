@@ -718,8 +718,8 @@ static void mbox_static_msglist_nav(request_rec *r, const char *baseURI,
 }
 
 /* Send page header */
-static void send_page_header(request_rec *r, const char *title,
-                             const char *h1, int add_script)
+static apr_status_t send_page_header(request_rec *r, const char *title,
+                                     const char *h1)
 {
     mbox_dir_cfg_t *conf = ap_get_module_config(r->per_dir_config,
                                                 &mbox_module);
@@ -735,23 +735,14 @@ static void send_page_header(request_rec *r, const char *title,
                "  <title>%s</title>\n",
                title);
 
-    if (conf->style_path) {
-        ap_rprintf(r,
-                   "  <link rel=\"stylesheet\" type=\"text/css\" href=\"%s\" />\n",
-                   conf->style_path);
-    }
-
-    if (add_script && conf->script_path) {
-        ap_rprintf(r,
-                   "  <script type=\"text/javascript\" src=\"%s\"></script>\n",
-                   conf->script_path);
-    }
+    DECLINE_NOT_SUCCESS(mbox_send_header_includes(r, conf));
 
     ap_rputs(" </head>\n\n"
              " <body id=\"archives\"", r);
     ap_rputs(">\n", r);
 
     ap_rprintf(r, "  <h1>%s</h1>\n\n", h1);
+    return APR_SUCCESS;
 }
 
 
@@ -830,10 +821,10 @@ apr_status_t mbox_static_msglist(request_rec *r, apr_file_t *f,
         year = "";
     }
 
-    send_page_header(r,
-                     apr_psprintf(r->pool, "%s mailing list archives: %s %.4s",
-                                  get_base_name(r), month, year),
-                     NULL, 0);
+    DECLINE_NOT_SUCCESS(send_page_header(r,
+                apr_psprintf(r->pool, "%s mailing list archives: %s %.4s",
+                             get_base_name(r), month, year),
+                NULL));
 
     ap_rputs("  <h5>\n", r);
 
@@ -906,6 +897,9 @@ apr_status_t mbox_static_msglist(request_rec *r, apr_file_t *f,
 
     ap_rputs(" <div id=\"shim\"></div>\n", r);
     ap_rputs(" </div><!-- /#cont -->\n", r);
+
+    DECLINE_NOT_SUCCESS(mbox_send_footer_includes(r, conf));
+
     ap_rputs(" </body>\n", r);
     ap_rputs("</html>", r);
     return OK;
@@ -920,7 +914,7 @@ apr_status_t mbox_ajax_browser(request_rec *r)
     send_page_header(r,
                      apr_psprintf(r->pool, "%s mailing list archives",
                                   get_base_name(r)),
-                     NULL, 1);
+                     NULL);
 
     ap_rputs("  <h5>\n", r);
 
@@ -1149,8 +1143,7 @@ int mbox_static_message(request_rec *r, apr_file_t *f)
     subject = ESCAPE_AND_CONV_HDR(r->pool, m->subject);
     send_page_header(r, subject,
                      apr_psprintf(r->pool, "%s mailing list archives",
-                                  get_base_name(r)),
-                     0);
+                                  get_base_name(r)));
 
     ap_rputs("  <h5>\n", r);
 

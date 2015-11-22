@@ -39,6 +39,7 @@
 #include "mod_mbox.h"
 
 #include "apr_lib.h"
+#include "apr_file_io.h"
 
 #ifdef APLOG_USE_MODULE
 APLOG_USE_MODULE(mbox);
@@ -72,10 +73,37 @@ static void *mbox_create_dir_config(apr_pool_t *p, char *x)
     conf->root_path = NULL;
     conf->style_path = NULL;
     conf->script_path = NULL;
+    conf->header_include_file = NULL;
+    conf->footer_include_file = NULL;
 
     return conf;
 }
 
+#define MBOX_CONFIG_MERGE_BOOL(merge_in, to_in, from_in, fieldname) \
+    do { \
+        int *_merge = &(merge_in->fieldname); \
+        int *_to = &(to_in->fieldname); \
+        int *_from = &(from_in->fieldname); \
+        if (_merge) { \
+            *_to = *_merge; \
+        } else { \
+            *_to = *_from; \
+        } \
+    } while (0);
+
+#define MBOX_CONFIG_MERGE_STRING(merge_in, to_in, from_in, fieldname) \
+    do { \
+        const char **_merge = &(merge_in->fieldname); \
+        const char **_to = &(to_in->fieldname); \
+        const char **_from = &(from_in->fieldname); \
+        if (*_merge) { \
+            *_to = apr_pstrdup(p, *_merge); \
+        } else { \
+            *_to = apr_pstrdup(p, *_from); \
+        } \
+    } while (0);
+
+/* Merge two configs, return a dynamically allocated copy. */
 static void *mbox_merge_dir_config(apr_pool_t *p, void *basev, void *addv)
 {
     mbox_dir_cfg_t *from = (mbox_dir_cfg_t *) basev;
@@ -84,62 +112,15 @@ static void *mbox_merge_dir_config(apr_pool_t *p, void *basev, void *addv)
 
     to = apr_palloc(p, sizeof(mbox_dir_cfg_t));
 
-    /* Update 'enabled' */
-    if (merge->enabled == 1) {
-        to->enabled = 1;
-    }
-    else {
-        to->enabled = from->enabled;
-    }
+    MBOX_CONFIG_MERGE_BOOL(merge, to, from, enabled);
+    MBOX_CONFIG_MERGE_BOOL(merge, to, from, hide_empty);
+    MBOX_CONFIG_MERGE_BOOL(merge, to, from, antispam);
 
-    /* Update 'hide_empty' */
-    if (merge->hide_empty == 1) {
-        to->hide_empty = 1;
-    }
-    else {
-        to->hide_empty = from->hide_empty;
-    }
-
-    /* Update 'antispam' */
-    if (merge->antispam == 1) {
-        to->antispam = 1;
-    }
-    else {
-        to->antispam = from->antispam;
-    }
-
-    /* Update 'root_path' */
-    if (merge->root_path != NULL) {
-        to->root_path = apr_pstrdup(p, merge->root_path);
-    }
-    else if (from->root_path != NULL) {
-        to->root_path = apr_pstrdup(p, from->root_path);
-    }
-    else {
-        to->root_path = NULL;
-    }
-
-    /* Update 'style_path' */
-    if (merge->style_path != NULL) {
-        to->style_path = apr_pstrdup(p, merge->style_path);
-    }
-    else if (from->style_path != NULL) {
-        to->style_path = apr_pstrdup(p, from->style_path);
-    }
-    else {
-        to->style_path = NULL;
-    }
-
-    /* Update 'style_path' */
-    if (merge->script_path != NULL) {
-        to->script_path = apr_pstrdup(p, merge->script_path);
-    }
-    else if (from->script_path != NULL) {
-        to->script_path = apr_pstrdup(p, from->script_path);
-    }
-    else {
-        to->script_path = NULL;
-    }
+    MBOX_CONFIG_MERGE_STRING(merge, to, from, root_path);
+    MBOX_CONFIG_MERGE_STRING(merge, to, from, style_path);
+    MBOX_CONFIG_MERGE_STRING(merge, to, from, script_path);
+    MBOX_CONFIG_MERGE_STRING(merge, to, from, header_include_file );
+    MBOX_CONFIG_MERGE_STRING(merge, to, from, footer_include_file );
 
     return to;
 }
@@ -282,6 +263,66 @@ const char *get_base_name(request_rec *r)
     return conf->base_name;
 }
 
+char *resolve_rel_path(request_rec *r, const char *rel_path) {
+    /* TODO: strip ".." components? */
+    return apr_pstrcat(r->pool, ap_context_document_root(r), "/", rel_path,
+                       NULL);
+}
+
+apr_status_t open_for_sendfile(request_rec *r, const char *fname,
+                               apr_file_t **file, apr_finfo_t *finfo) {
+    apr_finfo_t finfo_tmp;
+    RETURN_NOT_SUCCESS(apr_stat(&finfo_tmp, fname, APR_FINFO_SIZE, r->pool));
+    RETURN_NOT_SUCCESS(apr_file_open(file, fname,
+                                     APR_FOPEN_READ|APR_FOPEN_SENDFILE_ENABLED,
+                                     APR_OS_DEFAULT, r->pool));
+    *finfo = finfo_tmp;
+    return APR_SUCCESS;
+}
+
+// sendfile() the given filename to the remote.
+// TODO: Add support for caching the fd instead of opening it every time.
+apr_status_t mbox_send_include_file(request_rec *r, const char* include_fname) {
+    const char *include_fname_abs = resolve_rel_path(r, include_fname);
+    apr_file_t* file = NULL;
+    apr_finfo_t finfo;
+    LOG_RETURN_NOT_SUCCESS(open_for_sendfile(r, include_fname_abs,
+                                              &file, &finfo),
+                            APLOG_WARNING, r,
+                            "open_for_sendfile", include_fname_abs);
+    apr_size_t bytes_sent = 0;
+    LOG_RETURN_NOT_SUCCESS(ap_send_fd(file, r, 0, finfo.size, &bytes_sent),
+                            APLOG_WARNING, r,
+                            "ap_send_fd", finfo.name);
+    return apr_file_close(file);
+}
+
+apr_status_t mbox_send_header_includes(request_rec *r, mbox_dir_cfg_t *conf) {
+    if (conf->header_include_file) {
+        RETURN_NOT_SUCCESS(mbox_send_include_file(r, conf->header_include_file));
+    }
+
+    if (conf->style_path) {
+        ap_rprintf(r,
+                   "  <link rel=\"stylesheet\" type=\"text/css\" href=\"%s\" />\n",
+                   conf->style_path);
+    }
+    return APR_SUCCESS;
+}
+
+apr_status_t mbox_send_footer_includes(request_rec *r, mbox_dir_cfg_t *conf) {
+    if (conf->footer_include_file) {
+        RETURN_NOT_SUCCESS(mbox_send_include_file(r, conf->footer_include_file));
+    }
+
+    if (conf->script_path) {
+        ap_rprintf(r,
+                   "  <script type=\"text/javascript\" src=\"%s\"></script>\n",
+                   conf->script_path);
+    }
+    return APR_SUCCESS;
+}
+
 static const command_rec mbox_cmds[] = {
     AP_INIT_FLAG("mboxindex", ap_set_flag_slot,
                  (void *) APR_OFFSETOF(mbox_dir_cfg_t, enabled), OR_INDEXES,
@@ -289,6 +330,10 @@ static const command_rec mbox_cmds[] = {
     AP_INIT_FLAG("mboxantispam", ap_set_flag_slot,
                  (void *) APR_OFFSETOF(mbox_dir_cfg_t, antispam), OR_INDEXES,
                  "Enable mod_mbox email obfuscation."),
+    AP_INIT_FLAG("mboxhideempty", ap_set_flag_slot,
+                 (void *) APR_OFFSETOF(mbox_dir_cfg_t, hide_empty),
+                 OR_INDEXES,
+                 "Whether to display empty mboxes in index listing."),
     AP_INIT_TAKE1("mboxrootpath", ap_set_string_slot,
                   (void *) APR_OFFSETOF(mbox_dir_cfg_t, root_path),
                   OR_INDEXES,
@@ -301,10 +346,16 @@ static const command_rec mbox_cmds[] = {
                   (void *) APR_OFFSETOF(mbox_dir_cfg_t, script_path),
                   OR_INDEXES,
                   "Set the path to the Javascript file."),
-    AP_INIT_FLAG("mboxhideempty", ap_set_flag_slot,
-                 (void *) APR_OFFSETOF(mbox_dir_cfg_t, hide_empty),
+    AP_INIT_TAKE1("mboxheaderincludefile", ap_set_string_slot,
+                 (void *) APR_OFFSETOF(mbox_dir_cfg_t, header_include_file),
                  OR_INDEXES,
-                 "Whether to display empty mboxes in index listing."),
+                 "Path to a file whose contents will be included verbatim in "
+                 "the <head> of every HTML document."),
+    AP_INIT_TAKE1("mboxfooterincludefile", ap_set_string_slot,
+                 (void *) APR_OFFSETOF(mbox_dir_cfg_t, footer_include_file),
+                 OR_INDEXES,
+                 "Path to a file that will be included verbatim at the end of "
+                 "the <body> of every HTML document."),
     {NULL}
 };
 

@@ -78,6 +78,8 @@ typedef struct mbox_dir_cfg
     const char *root_path;
     const char *style_path;
     const char *script_path;
+    const char *header_include_file;
+    const char *footer_include_file;
 } mbox_dir_cfg_t;
 
 typedef struct mbox_file
@@ -150,6 +152,14 @@ const char *get_base_path(request_rec *r);
 const char *get_base_uri(request_rec *r);
 const char *get_base_name(request_rec *r);
 
+/* Returns an absolute file path, given one relative to the document root. */
+char *resolve_rel_path(request_rec *r, const char *rel_path);
+
+/* Open the file at the given path for purposes of sendfiling it later.
+   On success, file and finfo will be set. */
+apr_status_t open_for_sendfile(request_rec *r, const char *fname,
+                               apr_file_t **file, apr_finfo_t *finfo);
+
 /* XXX This should enforce that the result is valid UTF-8 */
 #define ESCAPE_OR_BLANK(pool, s) \
 (s ? mbox_cntrl_escape(pool, ap_escape_html(pool, s)) : "")
@@ -161,6 +171,36 @@ const char *get_base_name(request_rec *r);
 #define MSG_ID_ESCAPE_OR_BLANK(pool, s) \
 (s ? mbox_msg_id_escape(pool, ap_escape_uri(pool, s)) : "")
 
+/* Returns the return code if it does not equal APR_SUCCESS. */
+#define RETURN_NOT_SUCCESS(rc) \
+    do { \
+        int _rc = (rc); \
+        if (_rc != APR_SUCCESS) { \
+            return _rc; \
+        } \
+    } while (0)
+
+/* Same as above but also logs an error message. */
+#define LOG_RETURN_NOT_SUCCESS(rc, level, r, desc, arg) \
+    do { \
+        int _rc = (rc); \
+        if (_rc != APR_SUCCESS) { \
+            char errbuf[512]; \
+            ap_log_rerror(APLOG_MARK, level, _rc, r, \
+                          "mod_mbox: %s '%s': %s", \
+                          desc, arg, apr_strerror(_rc, errbuf, 512)); \
+            return _rc; \
+        } \
+    } while (0)
+
+/* Returns DECLINED if 'rc' does not equal APR_SUCCESS. */
+#define DECLINE_NOT_SUCCESS(rc) \
+    do { \
+        if ((rc) != APR_SUCCESS) { \
+            return DECLINED; \
+        } \
+    } while (0)
+
 /* Backend functions */
 apr_array_header_t *mbox_fetch_boxes_list(request_rec *r,
                                           mbox_cache_info *mli,
@@ -169,6 +209,9 @@ Message *fetch_message(request_rec *r, apr_file_t *f, char *msgID);
 char **fetch_context_msgids(request_rec *r, apr_file_t *f, char *msgID);
 
 void load_message(apr_pool_t *p, apr_file_t *f, Message *m);
+
+apr_status_t mbox_send_header_includes(request_rec *r, mbox_dir_cfg_t *conf);
+apr_status_t mbox_send_footer_includes(request_rec *r, mbox_dir_cfg_t *conf);
 
 #ifdef __cplusplus
 }

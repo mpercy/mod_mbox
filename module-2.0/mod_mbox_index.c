@@ -18,6 +18,7 @@
  * displays information about the mailing list.
  */
 
+#include "ap_config.h"
 #include "mod_mbox.h"
 
 #ifdef APLOG_USE_MODULE
@@ -224,22 +225,12 @@ int mbox_index_handler(request_rec *r)
     }
 
     ap_rprintf(r, "<link rel=\"alternate\" title=\"%s@%s Archives\" "
-               "type=\"application/atom+xml\" href=\"%s?format=atom\" />",
+               "type=\"application/atom+xml\" href=\"%s?format=atom\" />\n",
                ESCAPE_OR_BLANK(r->pool, mli->list),
                ESCAPE_OR_BLANK(r->pool, mli->domain),
                ap_construct_url(r->pool, r->uri, r));
 
-    if (conf->style_path) {
-        ap_rprintf(r,
-                   "   <link rel=\"stylesheet\" type=\"text/css\" href=\"%s\" />\n",
-                   conf->style_path);
-    }
-
-    if (conf->script_path) {
-        ap_rprintf(r,
-                   "   <script type=\"text/javascript\" src=\"%s\"></script>\n",
-                   conf->script_path);
-    }
+    DECLINE_NOT_SUCCESS(mbox_send_header_includes(r, conf));
 
     ap_rputs(" </head>\n\n", r);
 
@@ -303,6 +294,8 @@ int mbox_index_handler(request_rec *r)
 
     apr_rfc822_date(dstr, mli->mtime);
     ap_rprintf(r, "<p id=\"lastupdated\">Last updated on: %s</p>\n", dstr);
+
+    DECLINE_NOT_SUCCESS(mbox_send_footer_includes(r, conf));
 
     ap_rputs("  </body>\n", r);
     ap_rputs("</html>", r);
