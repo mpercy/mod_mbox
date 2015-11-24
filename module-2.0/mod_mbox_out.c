@@ -910,36 +910,10 @@ apr_status_t mbox_static_msglist(request_rec *r, apr_file_t *f,
 /* Outputs the AJAX browser XHTML stub. */
 apr_status_t mbox_ajax_browser(request_rec *r)
 {
-    mbox_dir_cfg_t *conf = ap_get_module_config(r->per_dir_config,
-                                                &mbox_module);
-
-    send_page_header(r,
-                     apr_psprintf(r->pool, "%s mailing list archives",
-                                  get_base_name(r)),
-                     NULL);
-
-    ap_rputs("  <h5>\n", r);
-
-    if (conf->root_path) {
-        ap_rprintf(r, "<a href=\"%s\" title=\"Back to the archives depot\">"
-                   "Site index</a> &middot; ", conf->root_path);
-    }
-
-    ap_rprintf(r, "<a href=\"%s\" title=\"Back to the list index\">"
-               "List index</a></h5>", get_base_path(r));
-
-    /* Output a small notice if no MboxScriptPath configuration
-       directive was specified. */
-    if (!conf->script_path) {
-        ap_rputs("  <p>You did not specified a script path, and the dynamic "
-                 "browser won't run without it. Check your server configuration.\n",
-                 r);
-    }
-
-    ap_rputs(" </div><!-- /#cont -->\n", r);
-    ap_rputs(" </body>\n</html>\n", r);
-
-    return OK;
+    const char* base_uri = get_base_uri(r);
+    const char* thread_url = apr_pstrcat(r->pool, base_uri, "/thread", NULL);
+    apr_table_addn(r->headers_out, "Location", thread_url);
+    return HTTP_MOVED_PERMANENTLY;
 }
 
 /* Display a raw mail from cache. No processing is done here. */
